@@ -1,3 +1,5 @@
+package org.nolat.scrolls;
+
 public class ScrollsAssistant {
 	public ScrollsAssistant() {
 
