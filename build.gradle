@@ -1,0 +1,32 @@
+apply plugin: 'java' //java project layout src/main/java src/test/java etc
+apply plugin: 'eclipse' //gradle eclipse generates eclipse project files
+
+version = '1.0.0a'
+
+repositories {
+    // Use maven central for resolving dependencies.
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    compile 'commons-codec:commons-codec:1.8'
+    compile 'com.google.code.gson:gson:2.2.4'
+
+    testCompile "junit:junit:4.11"
+}
+
+jar {
+    //make jar executable
+    manifest {
+        attributes ('Main-Class': 'Example',
+                    'Application-Version': version,
+                    'Built-By': System.getProperty("user.name"),
+                    'Built-On': new Date().toString())
+    }
+    //pack dependencies in to jar
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } 
+    }
+}
+
