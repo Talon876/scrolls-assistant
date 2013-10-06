@@ -1,0 +1,73 @@
+package org.nolat.scrolls.network;
+
+import org.apache.log4j.Logger;
+
+/**
+ * Keeps a {@link ServerConnection} alive by sending Ping packets periodically.
+ */
+public class Keepalive implements Runnable, PacketListener {
+
+    private static final Logger log = Logger.getLogger(Keepalive.class);
+    private static final int DEFAULT_TICK = 15000; //default 15 second delay between Ping
+    private static final String PING_PACKET = "{\"msg\":\"Ping\"}";
+
+    private final ServerConnection connection;
+    private final int tick;
+    private int ping = 0;
+    private long epoch = 0;
+
+    /**
+     * 
+     * @param connection
+     *            the connection to keep alive
+     * @param tick
+     *            time in ms between Ping requests
+     */
+    public Keepalive(ServerConnection connection, int tick) {
+        log.info("Starting Keepalive for " + connection.toString());
+        this.connection = connection;
+        this.tick = tick;
+        this.connection.addPacketListener(this); //register self as packet listener to receive Ping packets from server
+        new Thread(this, connection.getHostname() + "-keepalive").start();
+    }
+
+    /**
+     * Creates a Keepalive session using the default tick rate
+     * 
+     * @param connection
+     *            the connection to keep alive
+     */
+    public Keepalive(ServerConnection connection) {
+        this(connection, DEFAULT_TICK);
+    }
+
+    @Override
+    public void run() {
+        while (connection.getSocket().isConnected()) {
+            epoch = System.currentTimeMillis();
+            connection.sendPacket(PING_PACKET);
+            try {
+                Thread.sleep(tick);
+            } catch (InterruptedException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    public void onReceivedPacket(String packet) {
+        if (packet.contains("Ping")) {
+            ping = (int) (Math.random() * 140); //TODO actually calculate ping
+            log.info("Ping=" + ping + " ms");
+        }
+    }
+
+    /**
+     * Gets the ping in ms to the server
+     * 
+     * @return the ping in ms
+     */
+    public int getPing() {
+        return ping;
+    }
+}

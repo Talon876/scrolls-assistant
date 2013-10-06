@@ -13,20 +13,7 @@ public class ScrollsAssistant {
     public ScrollsAssistant() {
         ServerConnection connection = new ServerConnection();
         String LOBBY_LOOKUP = "{\"msg\":\"LobbyLookup\"}";
-        String PING = "{\"msg\":\"Ping\"}";
 
-        pause(1000);
-        connection.sendPacket(PING);
-        pause(1000);
-        connection.sendPacket(PING);
-        pause(1000);
-        connection.sendPacket(PING);
-        pause(1000);
-        connection.sendPacket(PING);
-        pause(1000);
-        connection.sendPacket(PING);
-        pause(19000);
-        connection.sendPacket(LOBBY_LOOKUP);
         //        connection.sendPacket(PING);
         //        pause(1500);
         //        connection.sendPacket(PING);
@@ -50,6 +37,5 @@ public class ScrollsAssistant {
         BasicConfigurator.configure();
         log.info("Starting " + ScrollsAssistant.class.getSimpleName() + " " + (new Date()).toString());
         new ScrollsAssistant();
-        log.debug("Done.");
     }
 }

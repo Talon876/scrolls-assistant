@@ -21,40 +21,48 @@ public class ServerConnection implements Runnable, PacketListener {
      * </p>
      */
     public static final String SCROLLS_LOAD_BALANCER = "107.21.58.31";
-    public static final String SCROLLS_MAIN_SERVER = "54.208.22.193";
 
     public static final int SCROLLS_PORT = 8081;
 
     private final List<PacketListener> listeners;
 
+    private final String hostname;
+
     private PrintWriter out = null;
     private BufferedReader in = null;
     private Socket socket = null;
+    private Keepalive keepalive = null;
 
     /**
      * Opens a connection to the given hostname on the default ServerConnection.SCROLLS_PORT
      * 
      * @param hostname
      *            the hostname or ip to connect to.
+     * @param keepAlive
+     *            whether or not to keep the connection alive by sending Ping messages
      */
-    public ServerConnection(String hostname) {
+    public ServerConnection(String hostname, boolean keepAlive) {
+        this.hostname = hostname;
         try {
             log.info("Attempting to open connection to " + hostname + ":" + SCROLLS_PORT);
             socket = new Socket(hostname, SCROLLS_PORT);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            new Thread(this, hostname + "-receiver-thread").start();
+            new Thread(this, hostname + "-receiver").start();
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
         listeners = new ArrayList<>();
+        if (keepAlive) {
+            keepalive = new Keepalive(this);
+        }
     }
 
     /**
      * Opens a connection to the Scrolls load balancing server.
      */
     public ServerConnection() {
-        this(SCROLLS_LOAD_BALANCER);
+        this(SCROLLS_LOAD_BALANCER, true);
     }
 
     /**
@@ -99,7 +107,6 @@ public class ServerConnection implements Runnable, PacketListener {
         try {
             while ((packet = in.readLine()) != null) {
                 if (!packet.isEmpty()) {
-                    log.debug("RCVD: '" + packet + "'");
                     onReceivedPacket(packet);
                 }
             }
@@ -117,8 +124,31 @@ public class ServerConnection implements Runnable, PacketListener {
 
     @Override
     public void onReceivedPacket(String packet) {
+        log.debug("RCVD: '" + packet + "'");
         for (PacketListener listener : listeners) {
             listener.onReceivedPacket(packet);
         }
+    }
+
+    public Socket getSocket() {
+        return socket;
+    }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    /**
+     * Gets the ping if keepalive is enabled, otherwise returns 0;
+     * 
+     * @return the ping if keepalive is enabled, otherwise 0.
+     */
+    public int getPing() {
+        return keepalive != null ? keepalive.getPing() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return hostname + ":" + SCROLLS_PORT;
     }
 }
