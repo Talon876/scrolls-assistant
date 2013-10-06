@@ -94,8 +94,12 @@ public class ServerConnection implements Runnable, PacketListener {
      * Disconnects from the server. Make sure to do this when you're done or else there might be leaks
      */
     public void shutdown() {
+        log.info("Shutting down server connection");
         try {
             socket.close();
+            if (keepalive != null) {
+                keepalive.stop();
+            }
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -119,7 +123,7 @@ public class ServerConnection implements Runnable, PacketListener {
                 log.error(e.getMessage(), ex);
             }
         }
-        log.info("Finished reading from the socket");
+        shutdown();
     }
 
     @Override

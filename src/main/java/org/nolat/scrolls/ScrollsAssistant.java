@@ -14,10 +14,8 @@ public class ScrollsAssistant {
         ServerConnection connection = new ServerConnection();
         String LOBBY_LOOKUP = "{\"msg\":\"LobbyLookup\"}";
 
-        //        connection.sendPacket(PING);
-        //        pause(1500);
-        //        connection.sendPacket(PING);
-        //        pause(1500);
+        pause(1500);
+        connection.sendPacket(LOBBY_LOOKUP);
     }
 
     public static void pause(int ms) {

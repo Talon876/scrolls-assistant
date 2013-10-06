@@ -15,6 +15,7 @@ public class Keepalive implements Runnable, PacketListener {
     private final int tick;
     private int ping = 0;
     private long epoch = 0;
+    private final Thread self;
 
     /**
      * 
@@ -28,7 +29,8 @@ public class Keepalive implements Runnable, PacketListener {
         this.connection = connection;
         this.tick = tick;
         this.connection.addPacketListener(this); //register self as packet listener to receive Ping packets from server
-        new Thread(this, connection.getHostname() + "-keepalive").start();
+        self = new Thread(this, connection.getHostname() + "-keepalive");
+        self.start();
     }
 
     /**
@@ -43,15 +45,16 @@ public class Keepalive implements Runnable, PacketListener {
 
     @Override
     public void run() {
-        while (connection.getSocket().isConnected()) {
+        while (!connection.getSocket().isClosed()) {
             epoch = System.currentTimeMillis();
             connection.sendPacket(PING_PACKET);
             try {
                 Thread.sleep(tick);
             } catch (InterruptedException e) {
-                log.error(e.getMessage(), e);
+                log.warn(e.getMessage(), e);
             }
         }
+        log.info("Ending keepalive thread");
     }
 
     @Override
@@ -69,5 +72,9 @@ public class Keepalive implements Runnable, PacketListener {
      */
     public int getPing() {
         return ping;
+    }
+
+    public void stop() {
+        self.interrupt();
     }
 }
