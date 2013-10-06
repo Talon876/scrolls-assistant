@@ -10,7 +10,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-public class ServerConnection implements Runnable, PacketListener {
+public class ServerConnection implements Runnable, RawPacketListener {
 
     private static final Logger log = Logger.getLogger(ServerConnection.class);
     /**
@@ -24,7 +24,7 @@ public class ServerConnection implements Runnable, PacketListener {
 
     public static final int SCROLLS_PORT = 8081;
 
-    private final List<PacketListener> listeners;
+    private final List<RawPacketListener> listeners;
 
     private final String hostname;
 
@@ -66,11 +66,11 @@ public class ServerConnection implements Runnable, PacketListener {
     }
 
     /**
-     * Adds a {@link PacketListener} to the listeners list
+     * Adds a {@link RawPacketListener} to the listeners list
      * 
      * @param listener
      */
-    public void addPacketListener(PacketListener listener) {
+    public void addRawPacketListener(RawPacketListener listener) {
         listeners.add(listener);
     }
 
@@ -111,7 +111,7 @@ public class ServerConnection implements Runnable, PacketListener {
         try {
             while ((packet = in.readLine()) != null) {
                 if (!packet.isEmpty()) {
-                    onReceivedPacket(packet);
+                    onReceivedRawPacket(packet);
                 }
             }
         } catch (IOException e) {
@@ -127,10 +127,10 @@ public class ServerConnection implements Runnable, PacketListener {
     }
 
     @Override
-    public void onReceivedPacket(String packet) {
-        log.debug("RCVD: '" + packet + "'");
-        for (PacketListener listener : listeners) {
-            listener.onReceivedPacket(packet);
+    public void onReceivedRawPacket(String packet) {
+        log.trace("RCVD: '" + packet + "'");
+        for (RawPacketListener listener : listeners) {
+            listener.onReceivedRawPacket(packet);
         }
     }
 

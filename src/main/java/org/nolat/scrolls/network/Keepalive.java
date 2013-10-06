@@ -5,11 +5,10 @@ import org.apache.log4j.Logger;
 /**
  * Keeps a {@link ServerConnection} alive by sending Ping packets periodically.
  */
-public class Keepalive implements Runnable, PacketListener {
+public class Keepalive implements Runnable, RawPacketListener {
 
     private static final Logger log = Logger.getLogger(Keepalive.class);
     private static final int DEFAULT_TICK = 15000; //default 15 second delay between Ping
-    private static final String PING_PACKET = "{\"msg\":\"Ping\"}";
 
     private final ServerConnection connection;
     private final int tick;
@@ -28,7 +27,7 @@ public class Keepalive implements Runnable, PacketListener {
         log.info("Starting Keepalive for " + connection.toString());
         this.connection = connection;
         this.tick = tick;
-        this.connection.addPacketListener(this); //register self as packet listener to receive Ping packets from server
+        this.connection.addRawPacketListener(this); //register self as packet listener to receive Ping packets from server
         self = new Thread(this, connection.getHostname() + "-keepalive");
         self.start();
     }
@@ -47,18 +46,18 @@ public class Keepalive implements Runnable, PacketListener {
     public void run() {
         while (!connection.getSocket().isClosed()) {
             epoch = System.currentTimeMillis();
-            connection.sendPacket(PING_PACKET);
+            connection.sendPacket(Packets.getPacket(Packets.Ping.class));
             try {
                 Thread.sleep(tick);
             } catch (InterruptedException e) {
-                log.warn(e.getMessage(), e);
+                log.warn("Keepalive sleep interrupted - stopping");
             }
         }
         log.info("Ending keepalive thread");
     }
 
     @Override
-    public void onReceivedPacket(String packet) {
+    public void onReceivedRawPacket(String packet) {
         if (packet.contains("Ping")) {
             ping = (int) (Math.random() * 140); //TODO actually calculate ping
             log.info("Ping=" + ping + " ms");
