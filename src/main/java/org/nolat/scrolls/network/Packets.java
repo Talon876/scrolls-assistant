@@ -5,7 +5,6 @@ import java.util.HashMap;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
-import com.sun.xml.internal.ws.api.message.Packet;
 
 public class Packets {
     public static final String PING = "Ping";
@@ -28,7 +27,7 @@ public class Packets {
         packetTypes.put(SERVER_INFO, ServerInfo.class);
     }
 
-    public static String getPacket(Class<? extends Packet> packetType) {
+    public static String getPacket(Class<?> packetType) {
         String packet = packets.get(packetType.getSimpleName());
         if (packet == null) {
             log.warn("Unable to retrieve packet for packet type '" + packetType + "'");
