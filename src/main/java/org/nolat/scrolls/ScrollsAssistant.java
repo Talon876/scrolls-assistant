@@ -4,7 +4,6 @@ import java.util.Date;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.nolat.scrolls.network.PacketRouter;
 import org.nolat.scrolls.network.Packets;
 import org.nolat.scrolls.network.ServerConnection;
 
@@ -14,10 +13,10 @@ public class ScrollsAssistant {
 
     public ScrollsAssistant() {
         ServerConnection connection = new ServerConnection();
-        PacketRouter router = new PacketRouter(connection);
+
 
         pause(30000);
-        connection.sendPacket(Packets.getPacket(Packets.LobbyLookup.class));
+        connection.sendPacket(Packets.getPacket(Packets.LOBBY_LOOKUP));
 
     }
 

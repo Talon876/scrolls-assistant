@@ -1,11 +1,12 @@
 package org.nolat.scrolls.network;
 
 import org.apache.log4j.Logger;
+import org.nolat.scrolls.network.Packets.Ping;
 
 /**
  * Keeps a {@link ServerConnection} alive by sending Ping packets periodically.
  */
-public class Keepalive implements Runnable, RawPacketListener {
+public class Keepalive implements Runnable {
 
     private static final Logger log = Logger.getLogger(Keepalive.class);
     private static final int DEFAULT_TICK = 15000; //default 15 second delay between Ping
@@ -27,9 +28,17 @@ public class Keepalive implements Runnable, RawPacketListener {
         log.info("Starting Keepalive for " + connection.toString());
         this.connection = connection;
         this.tick = tick;
-        this.connection.addRawPacketListener(this); //register self as packet listener to receive Ping packets from server
         self = new Thread(this, connection.getHostname() + "-keepalive");
         self.start();
+
+        PacketListener<Packets.Ping> pingListener = new PacketListener<Packets.Ping>() {
+            @Override
+            public void onReceivedPacket(Ping packet) {
+                ping = (int) (packet.time - epoch) / 1000;
+                System.out.println("Server Time: " + packet.time + "; Ping: " + ping + "ms");
+            }
+        };
+        this.connection.getPacketRouter().addPingPacketListener(pingListener);
     }
 
     /**
@@ -46,7 +55,7 @@ public class Keepalive implements Runnable, RawPacketListener {
     public void run() {
         while (!connection.getSocket().isClosed()) {
             epoch = System.currentTimeMillis();
-            connection.sendPacket(Packets.getPacket(Packets.Ping.class));
+            connection.sendPacket(Packets.getPacket(Packets.PING));
             try {
                 Thread.sleep(tick);
             } catch (InterruptedException e) {
@@ -54,14 +63,6 @@ public class Keepalive implements Runnable, RawPacketListener {
             }
         }
         log.info("Ending keepalive thread");
-    }
-
-    @Override
-    public void onReceivedRawPacket(String packet) {
-        if (packet.contains("Ping")) {
-            ping = (int) (Math.random() * 140); //TODO actually calculate ping
-            log.info("Ping=" + ping + " ms");
-        }
     }
 
     /**
@@ -73,6 +74,9 @@ public class Keepalive implements Runnable, RawPacketListener {
         return ping;
     }
 
+    /**
+     * Interrupts the keepalive thread. Use this to immediately kill the connection rather than waiting for the next ping
+     */
     public void stop() {
         self.interrupt();
     }

@@ -32,6 +32,7 @@ public class ServerConnection implements Runnable, RawPacketListener {
     private BufferedReader in = null;
     private Socket socket = null;
     private Keepalive keepalive = null;
+    private final PacketRouter packetRouter;
 
     /**
      * Opens a connection to the given hostname on the default ServerConnection.SCROLLS_PORT
@@ -43,6 +44,7 @@ public class ServerConnection implements Runnable, RawPacketListener {
      */
     public ServerConnection(String hostname, boolean keepAlive) {
         this.hostname = hostname;
+        listeners = new ArrayList<>();
         try {
             log.info("Attempting to open connection to " + hostname + ":" + SCROLLS_PORT);
             socket = new Socket(hostname, SCROLLS_PORT);
@@ -52,17 +54,18 @@ public class ServerConnection implements Runnable, RawPacketListener {
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
-        listeners = new ArrayList<>();
+        packetRouter = new PacketRouter(this);
         if (keepAlive) {
-            keepalive = new Keepalive(this);
+            keepalive = new Keepalive(this, 2500);
         }
+
     }
 
     /**
      * Opens a connection to the Scrolls load balancing server.
      */
     public ServerConnection() {
-        this(SCROLLS_LOAD_BALANCER, true);
+        this(SCROLLS_LOAD_BALANCER, true); //TODO load balancer won't require keepalive
     }
 
     /**
@@ -74,6 +77,7 @@ public class ServerConnection implements Runnable, RawPacketListener {
         listeners.add(listener);
     }
 
+
     /**
      * Sends a packet to the server
      * 
@@ -84,6 +88,8 @@ public class ServerConnection implements Runnable, RawPacketListener {
         log.debug("SEND: '" + packet + "'");
         if (socket.isClosed()) {
             log.error("Socket is closed. Cannot write");
+        } else if (packet == null || packet.isEmpty()) {
+            log.warn("Packet '" + packet + "' is null or empty. Refusing to send");
         } else {
             out.print(packet); //sends packet to the server
             out.flush();
@@ -140,6 +146,10 @@ public class ServerConnection implements Runnable, RawPacketListener {
 
     public String getHostname() {
         return hostname;
+    }
+
+    public PacketRouter getPacketRouter() {
+        return packetRouter;
     }
 
     /**
