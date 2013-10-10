@@ -33,6 +33,7 @@ public class MessageRouter extends EventBus implements RawMessageListener {
             Messages.TypeCheck general = gson.fromJson(rawMessage, Messages.TypeCheck.class);
             log.debug("Received '" + general.msg + "' message: " + rawMessage);
 
+            //TODO: clean this up as there will eventually be many types of Messages
             if (general.msg.equals(Messages.PING)) {
                 Messages.Ping pingPacket = gson.fromJson(rawMessage, Messages.Ping.class);
                 post(pingPacket);
