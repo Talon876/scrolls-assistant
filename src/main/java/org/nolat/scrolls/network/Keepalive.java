@@ -1,17 +1,18 @@
 package org.nolat.scrolls.network;
 
 import org.apache.log4j.Logger;
-import org.nolat.scrolls.network.Packets.Ping;
+
+import com.google.common.eventbus.Subscribe;
 
 /**
- * Keeps a {@link ServerConnection} alive by sending Ping packets periodically.
+ * Keeps a {@link ScrollsConnection} alive by sending Ping messages periodically.
  */
 public class Keepalive implements Runnable {
 
     private static final Logger log = Logger.getLogger(Keepalive.class);
     private static final int DEFAULT_TICK = 15000; //default 15 second delay between Ping
 
-    private final ServerConnection connection;
+    private final ScrollsConnection connection;
     private final int tick;
     private int ping = 0;
     private long epoch = 0;
@@ -24,21 +25,24 @@ public class Keepalive implements Runnable {
      * @param tick
      *            time in ms between Ping requests
      */
-    public Keepalive(ServerConnection connection, int tick) {
-        log.info("Starting Keepalive for " + connection.toString());
+    public Keepalive(ScrollsConnection connection, int tick) {
+        log.info("Starting Keepalive for " + connection.toString() + " with " + tick + "ms intervals.");
         this.connection = connection;
         this.tick = tick;
+        this.connection.getMessageRouter().register(this);
         self = new Thread(this, connection.getHostname() + "-keepalive");
         self.start();
+    }
 
-        PacketListener<Packets.Ping> pingListener = new PacketListener<Packets.Ping>() {
-            @Override
-            public void onReceivedPacket(Ping packet) {
-                ping = (int) (packet.time - epoch) / 1000;
-                System.out.println("Server Time: " + packet.time + "; Ping: " + ping + "ms");
-            }
-        };
-        this.connection.getPacketRouter().addPingPacketListener(pingListener);
+    /**
+     * This method is executed whenever a Ping message is received.
+     * 
+     * @param message
+     */
+    @Subscribe
+    public void updateLatency(Messages.Ping message) {
+        ping = (int) (message.time - epoch) / 1000;
+        log.trace("Ping: " + ping + "ms");
     }
 
     /**
@@ -47,7 +51,7 @@ public class Keepalive implements Runnable {
      * @param connection
      *            the connection to keep alive
      */
-    public Keepalive(ServerConnection connection) {
+    public Keepalive(ScrollsConnection connection) {
         this(connection, DEFAULT_TICK);
     }
 
@@ -55,7 +59,7 @@ public class Keepalive implements Runnable {
     public void run() {
         while (!connection.getSocket().isClosed()) {
             epoch = System.currentTimeMillis();
-            connection.sendPacket(Packets.getPacket(Packets.PING));
+            connection.sendMessage(Messages.getMessage(Messages.PING));
             try {
                 Thread.sleep(tick);
             } catch (InterruptedException e) {

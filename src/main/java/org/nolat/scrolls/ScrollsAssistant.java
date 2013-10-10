@@ -4,20 +4,26 @@ import java.util.Date;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.nolat.scrolls.network.Packets;
-import org.nolat.scrolls.network.ServerConnection;
+import org.nolat.scrolls.network.Messages;
+import org.nolat.scrolls.network.ScrollsConnection;
+
+import com.google.common.eventbus.Subscribe;
 
 public class ScrollsAssistant {
 
     private static final Logger log = Logger.getLogger(ScrollsAssistant.class);
 
     public ScrollsAssistant() {
-        ServerConnection connection = new ServerConnection();
-
-
+        ScrollsConnection connection = new ScrollsConnection();
+        connection.getMessageRouter().register(this);
         pause(30000);
-        connection.sendPacket(Packets.getPacket(Packets.LOBBY_LOOKUP));
+        connection.sendMessage(Messages.getMessage(Messages.LOBBY_LOOKUP));
 
+    }
+
+    @Subscribe
+    public void logServerInfo(Messages.ServerInfo serverInfo) {
+        log.info("Server Version: " + serverInfo.version);
     }
 
     public static void pause(int ms) {

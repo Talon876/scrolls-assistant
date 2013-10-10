@@ -10,21 +10,21 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-public class ServerConnection implements Runnable, RawPacketListener {
+public class ScrollsConnection implements Runnable, RawMessageListener {
 
-    private static final Logger log = Logger.getLogger(ServerConnection.class);
+    private static final Logger log = Logger.getLogger(ScrollsConnection.class);
     /**
      * Mojang's Amazon EC2 Instance used for load balancing. <br>
      * Hostname: ec2-107-21-58-31.compute-1.amazonaws.com <br>
      * <p>
-     * Connecting to this server on port 8081 and sending a 'LobbyLookup' packet returns the IP address of a Lobby server to connect to.
+     * Connecting to this server on port 8081 and sending a 'LobbyLookup' message returns the IP address of a Lobby server to connect to.
      * </p>
      */
     public static final String SCROLLS_LOAD_BALANCER = "107.21.58.31";
 
     public static final int SCROLLS_PORT = 8081;
 
-    private final List<RawPacketListener> listeners;
+    private final List<RawMessageListener> listeners;
 
     private final String hostname;
 
@@ -32,7 +32,7 @@ public class ServerConnection implements Runnable, RawPacketListener {
     private BufferedReader in = null;
     private Socket socket = null;
     private Keepalive keepalive = null;
-    private final PacketRouter packetRouter;
+    private final MessageRouter messageRouter;
 
     /**
      * Opens a connection to the given hostname on the default ServerConnection.SCROLLS_PORT
@@ -42,11 +42,11 @@ public class ServerConnection implements Runnable, RawPacketListener {
      * @param keepAlive
      *            whether or not to keep the connection alive by sending Ping messages
      */
-    public ServerConnection(String hostname, boolean keepAlive) {
+    public ScrollsConnection(String hostname, boolean keepAlive) {
         this.hostname = hostname;
         listeners = new ArrayList<>();
+        messageRouter = new MessageRouter(this);
         try {
-            log.info("Attempting to open connection to " + hostname + ":" + SCROLLS_PORT);
             socket = new Socket(hostname, SCROLLS_PORT);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -54,44 +54,42 @@ public class ServerConnection implements Runnable, RawPacketListener {
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
-        packetRouter = new PacketRouter(this);
+        log.info("Opened connection to " + hostname + ":" + SCROLLS_PORT);
         if (keepAlive) {
             keepalive = new Keepalive(this, 2500);
         }
-
     }
 
     /**
      * Opens a connection to the Scrolls load balancing server.
      */
-    public ServerConnection() {
+    public ScrollsConnection() {
         this(SCROLLS_LOAD_BALANCER, true); //TODO load balancer won't require keepalive
     }
 
     /**
-     * Adds a {@link RawPacketListener} to the listeners list
+     * Adds a {@link RawMessageListener} to the listeners list
      * 
      * @param listener
      */
-    public void addRawPacketListener(RawPacketListener listener) {
+    public void addRawMessageListener(RawMessageListener listener) {
         listeners.add(listener);
     }
 
-
     /**
-     * Sends a packet to the server
+     * Sends a message to the server
      * 
-     * @param packet
-     *            The packet to be sent to the server
+     * @param message
+     *            The message to be sent to the server
      */
-    public void sendPacket(String packet) {
-        log.debug("SEND: '" + packet + "'");
-        if (socket.isClosed()) {
+    public void sendMessage(String message) {
+        log.trace("SEND: '" + message + "'");
+        if (socket.isClosed()) { //don't send if socket is closed
             log.error("Socket is closed. Cannot write");
-        } else if (packet == null || packet.isEmpty()) {
-            log.warn("Packet '" + packet + "' is null or empty. Refusing to send");
+        } else if (message == null || message.isEmpty()) { //or if the message is null/empty
+            log.warn("message '" + message + "' is null or empty. Refusing to send");
         } else {
-            out.print(packet); //sends packet to the server
+            out.print(message); //sends message to the server
             out.flush();
         }
     }
@@ -113,11 +111,11 @@ public class ServerConnection implements Runnable, RawPacketListener {
 
     @Override
     public void run() {
-        String packet = "";
+        String message = "";
         try {
-            while ((packet = in.readLine()) != null) {
-                if (!packet.isEmpty()) {
-                    onReceivedRawPacket(packet);
+            while ((message = in.readLine()) != null) {
+                if (!message.isEmpty()) {
+                    onReceivedRawMessage(message);
                 }
             }
         } catch (IOException e) {
@@ -133,10 +131,10 @@ public class ServerConnection implements Runnable, RawPacketListener {
     }
 
     @Override
-    public void onReceivedRawPacket(String packet) {
-        log.trace("RCVD: '" + packet + "'");
-        for (RawPacketListener listener : listeners) {
-            listener.onReceivedRawPacket(packet);
+    public void onReceivedRawMessage(String message) {
+        log.trace("RCVD: '" + message + "'");
+        for (RawMessageListener listener : listeners) {
+            listener.onReceivedRawMessage(message);
         }
     }
 
@@ -148,8 +146,8 @@ public class ServerConnection implements Runnable, RawPacketListener {
         return hostname;
     }
 
-    public PacketRouter getPacketRouter() {
-        return packetRouter;
+    public MessageRouter getMessageRouter() {
+        return messageRouter;
     }
 
     /**
