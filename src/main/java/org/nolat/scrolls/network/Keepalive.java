@@ -1,6 +1,7 @@
 package org.nolat.scrolls.network;
 
 import org.apache.log4j.Logger;
+import org.nolat.scrolls.network.Messages.Ping;
 
 import com.google.common.eventbus.Subscribe;
 
@@ -11,7 +12,7 @@ public class Keepalive implements Runnable {
 
     private static final Logger log = Logger.getLogger(Keepalive.class);
     private static final int DEFAULT_TICK = 15000; //default 15 second delay between Ping
-
+    private static final Ping PING_MESSAGE = new Ping();
     private final ScrollsConnection connection;
     private final int tick;
     private int ping = 0;
@@ -59,7 +60,7 @@ public class Keepalive implements Runnable {
     public void run() {
         while (!connection.getSocket().isClosed()) {
             epoch = System.currentTimeMillis();
-            connection.sendMessage(Messages.getMessage(Messages.PING));
+            connection.sendMessage(PING_MESSAGE);
             try {
                 Thread.sleep(tick);
             } catch (InterruptedException e) {

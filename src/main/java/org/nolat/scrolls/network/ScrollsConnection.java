@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.nolat.scrolls.network.Messages.Message;
 
 public class ScrollsConnection implements Runnable, RawMessageListener {
 
@@ -33,6 +34,7 @@ public class ScrollsConnection implements Runnable, RawMessageListener {
     private Socket socket = null;
     private Keepalive keepalive = null;
     private final MessageRouter messageRouter;
+    private final Thread receiverThread;
 
     /**
      * Opens a connection to the given hostname on the default ServerConnection.SCROLLS_PORT
@@ -50,21 +52,32 @@ public class ScrollsConnection implements Runnable, RawMessageListener {
             socket = new Socket(hostname, SCROLLS_PORT);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            new Thread(this, hostname + "-receiver").start();
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
+        receiverThread = new Thread(this, hostname + "-receiver");
+        receiverThread.start();
         log.info("Opened connection to " + hostname + ":" + SCROLLS_PORT);
         if (keepAlive) {
-            keepalive = new Keepalive(this, 2500);
+            keepalive = new Keepalive(this);
         }
+    }
+
+    /**
+     * Opens a connection to the specified hostname on the default port with keepalive enabled.
+     * 
+     * @param hostname
+     *            the hostname to connect to
+     */
+    public ScrollsConnection(String hostname) {
+        this(hostname, true);
     }
 
     /**
      * Opens a connection to the Scrolls load balancing server.
      */
     public ScrollsConnection() {
-        this(SCROLLS_LOAD_BALANCER, true); //TODO load balancer won't require keepalive
+        this(SCROLLS_LOAD_BALANCER, false);
     }
 
     /**
@@ -77,13 +90,13 @@ public class ScrollsConnection implements Runnable, RawMessageListener {
     }
 
     /**
-     * Sends a message to the server
+     * Sends a raw string message to the server
      * 
      * @param message
-     *            The message to be sent to the server
+     *            The raw message to be sent to the server
      */
-    public void sendMessage(String message) {
-        log.trace("SEND: '" + message + "'");
+    public void sendRawMessage(String message) {
+        log.debug("SEND: '" + message + "'");
         if (socket.isClosed()) { //don't send if socket is closed
             log.error("Socket is closed. Cannot write");
         } else if (message == null || message.isEmpty()) { //or if the message is null/empty
@@ -92,6 +105,16 @@ public class ScrollsConnection implements Runnable, RawMessageListener {
             out.print(message); //sends message to the server
             out.flush();
         }
+    }
+
+    /**
+     * Sends a Message to the server after serializing it to json.
+     * 
+     * @param message
+     *            the Message to be sent
+     */
+    public void sendMessage(Message message) {
+        sendRawMessage(message.toString());
     }
 
     /**
@@ -148,6 +171,15 @@ public class ScrollsConnection implements Runnable, RawMessageListener {
 
     public MessageRouter getMessageRouter() {
         return messageRouter;
+    }
+
+    /**
+     * The thread that the socket is being read/written from/on.
+     * 
+     * @return the thread
+     */
+    public Thread getReceiverThread() {
+        return receiverThread;
     }
 
     /**

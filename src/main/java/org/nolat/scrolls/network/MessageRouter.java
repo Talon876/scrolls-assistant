@@ -27,21 +27,24 @@ public class MessageRouter extends EventBus implements RawMessageListener {
     }
 
     @Override
-    public void onReceivedRawMessage(String message) {
+    public void onReceivedRawMessage(String rawMessage) {
         try {
             //convert to general packet to find out 'msg'
-            Messages.TypeCheck general = gson.fromJson(message, Messages.TypeCheck.class);
-            log.debug("Received '" + general.msg + "' message");
+            Messages.TypeCheck general = gson.fromJson(rawMessage, Messages.TypeCheck.class);
+            log.debug("Received '" + general.msg + "' message: " + rawMessage);
 
             if (general.msg.equals(Messages.PING)) {
-                Messages.Ping pingPacket = gson.fromJson(message, Messages.Ping.class);
+                Messages.Ping pingPacket = gson.fromJson(rawMessage, Messages.Ping.class);
                 post(pingPacket);
             } else if (general.msg.equals(Messages.SERVER_INFO)) {
-                Messages.ServerInfo serverInfoPacket = gson.fromJson(message, Messages.ServerInfo.class);
+                Messages.ServerInfo serverInfoPacket = gson.fromJson(rawMessage, Messages.ServerInfo.class);
                 post(serverInfoPacket);
+            } else if (general.msg.equals(Messages.LOBBY_LOOKUP)) {
+                Messages.LobbyLookup lobbyLookup = gson.fromJson(rawMessage, Messages.LobbyLookup.class);
+                post(lobbyLookup);
             }
         } catch (JsonSyntaxException ex) {
-            log.warn("Failed to parse message: '" + message + "'", ex);
+            log.warn("Failed to parse message: '" + rawMessage + "'", ex);
         }
     }
 }
