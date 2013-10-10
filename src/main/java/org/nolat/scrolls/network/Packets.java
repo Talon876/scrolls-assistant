@@ -60,24 +60,28 @@ public class Packets {
         public String msg;
     }
 
-    public static class ServerInfo {
+    public static abstract class Packet {
+
+    }
+
+    public static class ServerInfo extends Packet {
         public String msg = "ServerInfo";
         public String assetURL;
         public String version;
     }
 
-    public static class LobbyLookup {
+    public static class LobbyLookup extends Packet {
         public String msg = "LobbyLookup";
         public String ip;
         public String port;
     }
 
-    public static class Ping {
+    public static class Ping extends Packet {
         public String msg = "Ping";
         public long time;
     }
 
-    public static class SignIn {
+    public static class SignIn extends Packet {
         public String msg = "SignIn";
         public String email;
         public String password;
@@ -96,17 +100,17 @@ public class Packets {
         }
     }
 
-    public static class GetFriendRequests {
+    public static class GetFriendRequests extends Packet {
         public String msg = "GetFriendRequests";
         public String[] requests;
     }
 
-    public static class GetBlockedPersons {
+    public static class GetBlockedPersons extends Packet {
         public String msg = "GetBlockedPersons";
         public String[] blocked;
     }
 
-    public static class ProfileInfo {
+    public static class ProfileInfo extends Packet {
         public String msg = "ProfileInfo";
         public Profile profile;
 
@@ -121,7 +125,7 @@ public class Packets {
         }
     }
 
-    public static class ProfileDataInfo {
+    public static class ProfileDataInfo extends Packet {
         public String msg = "ProfileDataInfo";
         public ProfileData profileData;
 
@@ -133,17 +137,17 @@ public class Packets {
         }
     }
 
-    public static class Ok {
+    public static class Ok extends Packet {
         public String msg = "Ok";
         public String op;
     }
 
-    public static class RoomEnter {
+    public static class RoomEnter extends Packet {
         public String msg = "RoomEnter";
         public String roomName;
     }
 
-    public static class RoomChatMessage {
+    public static class RoomChatMessage extends Packet {
         public String msg = "RoomChatMessage";
         public String roomName;
         public String from;

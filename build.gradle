@@ -12,6 +12,7 @@ dependencies {
     compile 'log4j:log4j:1.2.17'
     compile 'commons-codec:commons-codec:1.8'
     compile 'com.google.code.gson:gson:2.2.4'
+    compile 'com.google.guava:guava:15.0'
 
     testCompile 'junit:junit:4.11'
 
