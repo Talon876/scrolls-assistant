@@ -2,51 +2,43 @@ package org.nolat.scrolls.network;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
-
 import com.google.gson.Gson;
 
+@SuppressWarnings("unused")
 public class Messages {
-    public static final String PING = "Ping";
-    public static final String LOBBY_LOOKUP = "LobbyLookup";
-    public static final String SERVER_INFO = "ServerInfo";
+    private Messages() {
+    }
 
-    private static final Logger log = Logger.getLogger(Messages.class);
-    private static final HashMap<String, String> messages;
     private static final HashMap<String, Class<? extends Message>> messageTypes;
     private static final Gson gson = new Gson();
 
     static {
-        messages = new HashMap<>();
-        messages.put(Ping.class.getSimpleName(), toJson(new Ping()));
-        messages.put(LobbyLookup.class.getSimpleName(), toJson(new LobbyLookup()));
-
         messageTypes = new HashMap<>();
-        messageTypes.put(PING, Ping.class);
-        messageTypes.put(LOBBY_LOOKUP, LobbyLookup.class);
-        messageTypes.put(SERVER_INFO, ServerInfo.class);
+
+        messageTypes.put("ServerInfo", ServerInfo.class);
+        messageTypes.put("LobbyLookup", LobbyLookup.class);
+        messageTypes.put("Ping", Ping.class);
+        messageTypes.put("SignIn", SignIn.class);
+        messageTypes.put("GetFriendRequests", GetFriendRequests.class);
+        messageTypes.put("GetBlockedPersons", GetBlockedPersons.class);
+        messageTypes.put("ProfileInfo", ProfileInfo.class);
+        messageTypes.put("ProfileDataInfo", ProfileDataInfo.class);
+        messageTypes.put("Ok", Ok.class);
+        messageTypes.put("RoomEnter", RoomEnter.class);
+        messageTypes.put("RoomChatMessage", RoomChatMessage.class);
+        messageTypes.put("Whisper", Whisper.class);
+        messageTypes.put("GetFriends", GetFriends.class);
     }
 
-    public static String getMessage(Class<?> messageType) {
-        String message = messages.get(messageType.getSimpleName());
-        if (message == null) {
-            log.warn("Unable to retrieve message for message type '" + messageType + "'");
-        }
-        return message;
-    }
-
-    public static String getMessage(String messageType) {
-        String message = messages.get(messageType);
-
-        return message;
-    }
-
+    /**
+     * Finds the class corresponding for the Message type obtained from "msg" parameter
+     * 
+     * @param messageType
+     *            the "msg" parameter in the json string
+     * @return the Class the message should be deserialized to. May be null
+     */
     public static Class<? extends Message> getMessageType(String messageType) {
-        Class<? extends Message> clazz = messageTypes.get(messageType);
-        if (clazz == null) {
-            log.warn("Unknown message type: " + messageType);
-        }
-        return clazz;
+        return messageTypes.get(messageType);
     }
 
     public static String toJson(Object message) {
@@ -60,6 +52,7 @@ public class Messages {
         public String msg;
     }
 
+    //---Message Classes---
     public static abstract class Message {
         @Override
         public String toString() {
@@ -90,16 +83,23 @@ public class Messages {
         public String password;
 
         /**
-         * Create a SignIn message and automatically RSA encrypts the email and password using Mojang's Public key
+         * Create a SignIn message using pre-encrypted credentials, or automatically encrypt the credentials using Mojang's Public Key
          * 
          * @param email
          *            the email of the user
          * @param password
          *            the password of the user
+         * @param encrypt
+         *            whether or not to encrypt the provided email and password
          */
-        public SignIn(String email, String password) {
-            this.email = Encryption.encrypt(email);
-            this.password = Encryption.encrypt(password);
+        public SignIn(String email, String password, boolean encrypt) {
+            if (encrypt) {
+                this.email = Encryption.encrypt(email);
+                this.password = Encryption.encrypt(password);
+            } else {
+                this.email = email;
+                this.password = password;
+            }
         }
     }
 
@@ -116,16 +116,6 @@ public class Messages {
     public static class ProfileInfo extends Message {
         public String msg = "ProfileInfo";
         public Profile profile;
-
-        public static class Profile {
-            public String id;
-            public String userUuid;
-            public String name;
-            public boolean acceptChallenges;
-            public boolean acceptTrades;
-            public String adminRole;
-            public String userType;
-        }
     }
 
     public static class ProfileDataInfo extends Message {
@@ -148,6 +138,15 @@ public class Messages {
     public static class RoomEnter extends Message {
         public String msg = "RoomEnter";
         public String roomName;
+
+        /**
+         * 
+         * @param roomName
+         *            the name of a room to join
+         */
+        public RoomEnter(String roomName) {
+            this.roomName = roomName;
+        }
     }
 
     public static class RoomChatMessage extends Message {
@@ -155,5 +154,62 @@ public class Messages {
         public String roomName;
         public String from;
         public String text;
+    }
+
+    public static class Whisper extends Message {
+        public String msg = "Whisper";
+        public String toProfilename;
+        public String from;
+        public String text;
+    }
+
+    public static class GetFriends extends Message {
+        public String msg = "GetFriends";
+        public FriendProfile[] friends;
+
+        private static class FriendProfile {
+            public Profile profile;
+            public boolean isOnline;
+            public boolean isInBattle;
+        }
+    }
+
+    public static class SetAcceptChallenges extends Message {
+        public String msg = "SetAcceptChallenges";
+        public boolean acceptChallenges;
+
+        /**
+         * 
+         * @param acceptChallenges
+         *            whether or not the client will accept challenge requests
+         */
+        public SetAcceptChallenges(boolean acceptChallenges) {
+            this.acceptChallenges = acceptChallenges;
+        }
+    }
+
+    public static class SetAcceptTrades extends Message {
+        public String msg = "SetAcceptTrades";
+        public boolean acceptTrades;
+
+        /**
+         * 
+         * @param acceptTrades
+         *            whether or not the client will accept challenge requests
+         */
+        public SetAcceptTrades(boolean acceptTrades) {
+            this.acceptTrades = acceptTrades;
+        }
+    }
+
+    //---Data Classes---
+    private static class Profile {
+        public String id;
+        public String userUuid;
+        public String name;
+        public boolean acceptChallenges;
+        public boolean acceptTrades;
+        public String adminRole;
+        public String userType;
     }
 }

@@ -64,7 +64,7 @@ public class Keepalive implements Runnable {
             try {
                 Thread.sleep(tick);
             } catch (InterruptedException e) {
-                log.warn("Keepalive sleep interrupted - stopping");
+                log.debug("Keepalive sleep interrupted - stopping");
             }
         }
         log.info("Ending keepalive thread");

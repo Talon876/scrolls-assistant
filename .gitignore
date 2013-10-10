@@ -21,3 +21,5 @@ build
 .cache
 
 .gradle
+
+log4j-custom.properties

@@ -1,6 +1,7 @@
 package org.nolat.scrolls.network;
 
 import org.apache.log4j.Logger;
+import org.nolat.scrolls.network.Messages.Message;
 
 import com.google.common.eventbus.EventBus;
 import com.google.gson.Gson;
@@ -32,18 +33,14 @@ public class MessageRouter extends EventBus implements RawMessageListener {
             //convert to general packet to find out 'msg'
             Messages.TypeCheck general = gson.fromJson(rawMessage, Messages.TypeCheck.class);
             log.debug("Received '" + general.msg + "' message: " + rawMessage);
-
-            //TODO: clean this up as there will eventually be many types of Messages
-            if (general.msg.equals(Messages.PING)) {
-                Messages.Ping pingPacket = gson.fromJson(rawMessage, Messages.Ping.class);
-                post(pingPacket);
-            } else if (general.msg.equals(Messages.SERVER_INFO)) {
-                Messages.ServerInfo serverInfoPacket = gson.fromJson(rawMessage, Messages.ServerInfo.class);
-                post(serverInfoPacket);
-            } else if (general.msg.equals(Messages.LOBBY_LOOKUP)) {
-                Messages.LobbyLookup lobbyLookup = gson.fromJson(rawMessage, Messages.LobbyLookup.class);
-                post(lobbyLookup);
+            Class<? extends Message> messageType = Messages.getMessageType(general.msg);
+            if (messageType != null) {
+                post(gson.fromJson(rawMessage, messageType));
+            } else {
+                log.warn("Unable to find Message type for '" + general.msg
+                        + "'. Is it registered in the Messages list?");
             }
+
         } catch (JsonSyntaxException ex) {
             log.warn("Failed to parse message: '" + rawMessage + "'", ex);
         }

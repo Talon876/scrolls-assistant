@@ -31,7 +31,7 @@ public class Encryption {
      * @return The base64 encoding representation of the message, ready to be sent to the Scrolls server
      */
     public static String encrypt(String message) {
-        log.info("Encrypting some stuff");
+        log.debug("Encrypting something");
         byte[] modBytes = Base64.decodeBase64(MODULUS);
         byte[] expBytes = Base64.decodeBase64(EXPONENT);
 
