@@ -10,6 +10,9 @@ ehthumbs.db
 Thumbs.db
 dist
 
+#ides
+.idea
+*/node_modules
 
 *.class
 bin

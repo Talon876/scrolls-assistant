@@ -21,8 +21,8 @@ Create a settings.json file then run the jar.
 Settings File:
 
     {
-      "name": "--your rsa encrypted username/email",
-      "server": "--your rsa encrypted password--"
+      "encryptedEmail": "--your rsa encrypted username/email",
+      "encryptedPassword": "--your rsa encrypted password--"
     }
 
 
