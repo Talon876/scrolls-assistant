@@ -13,6 +13,7 @@ dependencies {
     compile 'commons-codec:commons-codec:1.8'
     compile 'com.google.code.gson:gson:2.2.4'
     compile 'com.google.guava:guava:15.0'
+    compile 'com.martiansoftware:jsap:2.1'
 
     testCompile 'junit:junit:4.11'
 

@@ -1,7 +1,8 @@
 Scrolls Assistant
 =================
+[![Build Status](https://travis-ci.org/Talon876/scrolls-assistant.png?branch=master)](https://travis-ci.org/Talon876/scrolls-assistant)
 
-An assistant chat-bot for Mojang's Scrolls game.
+An assistant chat-bot and api for Mojang's Scrolls game.
 
 Eclipse Setup
 -------------
@@ -13,4 +14,44 @@ If any changes are made to the dependencies in the build.gradle file, you will h
 
 After running the project, open the Run Configurations and add `-Dlog4j.configuration=file:log4j.properties` as a VM argument if you wish to alter the logging level.
 
-[![Build Status](https://travis-ci.org/Talon876/scrolls-assistant.png?branch=master)](https://travis-ci.org/Talon876/scrolls-assistant)
+How to Run
+----------
+Create a settings.json file then run the jar.
+
+Settings File:
+
+    {
+      "name": "--your rsa encrypted username/email",
+      "server": "--your rsa encrypted password--"
+    }
+
+
+Settings Description:
+
+|Key|Description|
+|---|-----------|
+|encryptedUsername| RSA encrypted Scrolls username/email obtained with the -e option|
+|encryptedPassword | RSA encrypted Scrolls password obtained with the -e option|
+
+Running the jar:
+
+    Usage: java -jar scrolls-assistant.jar [options]
+		Examples: Run: java -jar scrolls-assistant.jar -f settings.json
+		Encrypt: java -jar scrolls-assistant.jar -e -u someone@somewhere.net -p myp@ssw0rd!
+
+		Help:
+		  [-h|--help]
+		        Displays this help message
+		
+		  [-e|--encrypt]
+		        Encrypt's username/password
+		
+		  [(-f|--file) <file>]
+		        The path to the file to load settings from (default: settings.json)
+		
+		  [(-u|--username) <username>]
+		        The username to encrypt when using --encrypt
+		
+		  [(-p|--password) <password>]
+		        The password to encrypt when using --encrypt
+

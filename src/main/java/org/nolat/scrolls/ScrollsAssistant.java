@@ -1,32 +1,44 @@
 package org.nolat.scrolls;
 
-import java.util.Date;
-
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.nolat.scrolls.network.Encryption;
 import org.nolat.scrolls.network.Messages;
 import org.nolat.scrolls.network.ScrollsConnection;
 import org.nolat.scrolls.utils.ScrollsLoadBalancer;
+import org.nolat.scrolls.utils.Settings;
 
 import com.google.common.eventbus.Subscribe;
+import com.martiansoftware.jsap.FlaggedOption;
+import com.martiansoftware.jsap.JSAP;
+import com.martiansoftware.jsap.JSAPException;
+import com.martiansoftware.jsap.JSAPResult;
+import com.martiansoftware.jsap.Switch;
 
 public class ScrollsAssistant {
 
     private static final Logger log = Logger.getLogger(ScrollsAssistant.class);
 
     private final ScrollsConnection scrolls;
+    private final Settings settings;
 
-    public ScrollsAssistant() {
+    public ScrollsAssistant(Settings settings) {
+        this.settings = settings;
         ScrollsLoadBalancer balancer = new ScrollsLoadBalancer();
         scrolls = new ScrollsConnection(balancer.getScrollsLobbyIp());
         scrolls.getMessageRouter().register(this);
-        scrolls.sendMessage(new Messages.SignIn("--encrypted email--", "--encrypted password--", false));
+        System.out.println(this.settings.getEncryptedEmail() + "\n" + this.settings.getEncryptedPassword());
+        scrolls.sendMessage(new Messages.SignIn(this.settings.getEncryptedEmail(),
+                this.settings.getEncryptedPassword(), false));
         scrolls.sendMessage(new Messages.SetAcceptChallenges(false));
         scrolls.sendMessage(new Messages.SetAcceptTrades(false));
         for (int i = 1; i <= 30; i++) {
             scrolls.sendMessage(new Messages.RoomEnter("trading-" + i));
         }
+    }
+
+    public Settings getSettings() {
+        return settings;
     }
 
     @Subscribe
@@ -54,15 +66,76 @@ public class ScrollsAssistant {
      */
     public static void main(String[] args) {
         BasicConfigurator.configure();
-        if (args.length == 3 && args[0].equalsIgnoreCase("encrypt")) {
-            String username = args[1];
-            String password = args[2];
-            System.out.println(args[1] + " : " + args[2]);
-            System.out.println("Encrypted username: " + Encryption.encrypt(username));
-            System.out.println("Encrypted password: " + Encryption.encrypt(password));
-        } else {
-            log.info("Starting " + ScrollsAssistant.class.getSimpleName() + " " + (new Date()).toString());
-            new ScrollsAssistant();
+        JSAP jsap = null;
+        try {
+            jsap = createJSAP();
+            JSAPResult config = jsap.parse(args);
+            if (config.success()) {
+                System.out.println("SUCCESS");
+                if (config.getBoolean("encrypt")) {
+                    System.out.println("Encrypting Username/Password for settings.json file:");
+                    String username = config.getString("username");
+                    String password = config.getString("password");
+                    System.out.println("Encrypted username: " + Encryption.encrypt(username));
+                    System.out.println("Encrypted password: " + Encryption.encrypt(password));
+                } else {
+                    String filePath = config.getString("file");
+                    System.out.println(filePath);
+                    Settings settings = new Settings(filePath);
+                    new ScrollsAssistant(settings);
+                }
+            } else {
+                help(jsap);
+            }
+        } catch (JSAPException ex) {
+            log.error("Could not parse arguments", ex);
         }
+    }
+
+    private static void help(JSAP jsap) {
+        System.out.println("Usage: java -jar scrolls-assistant.jar [options]");
+        System.out.println("Examples: Run: java -jar scrolls-assistant.jar -f settings.json");
+        System.out.println("\tEncrypt: java -jar scrolls-assistant.jar -e -u someone@somewhere.net -p myp@ssw0rd!");
+        System.out.println("\nHelp:");
+        System.out.println(jsap.getHelp());
+    }
+
+    private static JSAP createJSAP() throws JSAPException {
+        JSAP jsap = new JSAP();
+
+        Switch switchOpt = new Switch("help");
+        switchOpt.setShortFlag('h');
+        switchOpt.setLongFlag("help");
+        switchOpt.setHelp("Displays this help message");
+        jsap.registerParameter(switchOpt);
+
+        Switch switchOptEncrypt = new Switch("encrypt");
+        switchOptEncrypt.setShortFlag('e');
+        switchOptEncrypt.setLongFlag("encrypt");
+        switchOptEncrypt.setHelp("Encrypt's username/password");
+        jsap.registerParameter(switchOptEncrypt);
+
+        FlaggedOption fileOpt = new FlaggedOption("file");
+        fileOpt.setStringParser(JSAP.STRING_PARSER);
+        fileOpt.setShortFlag('f');
+        fileOpt.setLongFlag("file");
+        fileOpt.setHelp("The path to the file to load settings from");
+        fileOpt.setDefault("settings.json");
+        jsap.registerParameter(fileOpt);
+
+        FlaggedOption usernameOpt = new FlaggedOption("username");
+        usernameOpt.setStringParser(JSAP.STRING_PARSER);
+        usernameOpt.setShortFlag('u');
+        usernameOpt.setLongFlag("username");
+        usernameOpt.setHelp("The username to encrypt when using --encrypt");
+        jsap.registerParameter(usernameOpt);
+
+        FlaggedOption passwordOpt = new FlaggedOption("password");
+        passwordOpt.setStringParser(JSAP.STRING_PARSER);
+        passwordOpt.setShortFlag('p');
+        passwordOpt.setLongFlag("password");
+        passwordOpt.setHelp("The password to encrypt when using --encrypt");
+        jsap.registerParameter(passwordOpt);
+        return jsap;
     }
 }

@@ -22,4 +22,6 @@ build
 
 .gradle
 
+#ignore logging/settings file used for debugging
 log4j-custom.properties
+settings-debug.json
