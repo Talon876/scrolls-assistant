@@ -25,7 +25,6 @@ public class Settings {
         if (f.exists() && f.isFile()) {
             try {
                 jsonData = FileReader.readFile(path);
-                System.out.println(jsonData);
             } catch (IOException ex) {
                 log.error("Could not read settings file", ex);
             }

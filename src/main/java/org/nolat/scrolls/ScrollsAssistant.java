@@ -16,7 +16,7 @@ import com.martiansoftware.jsap.JSAPResult;
 import com.martiansoftware.jsap.Switch;
 
 public class ScrollsAssistant {
-
+    public static final String CLIENT_VERSION = "0.105.0";
     private static final Logger log = Logger.getLogger(ScrollsAssistant.class);
 
     private final ScrollsConnection scrolls;
@@ -27,7 +27,6 @@ public class ScrollsAssistant {
         ScrollsLoadBalancer balancer = new ScrollsLoadBalancer();
         scrolls = new ScrollsConnection(balancer.getScrollsLobbyIp());
         scrolls.getMessageRouter().register(this);
-        System.out.println(this.settings.getEncryptedEmail() + "\n" + this.settings.getEncryptedPassword());
         scrolls.sendMessage(new Messages.SignIn(this.settings.getEncryptedEmail(),
                 this.settings.getEncryptedPassword(), false));
         scrolls.sendMessage(new Messages.SetAcceptChallenges(false));
@@ -48,6 +47,9 @@ public class ScrollsAssistant {
 
     @Subscribe
     public void logServerInfo(Messages.ServerInfo serverInfo) {
+        if (!serverInfo.version.equals(CLIENT_VERSION)) {
+            log.warn("This client was designed for version " + CLIENT_VERSION + ", things may be unstable.");
+        }
         log.info("Scrolls Server Version: " + serverInfo.version);
     }
 
@@ -71,7 +73,6 @@ public class ScrollsAssistant {
             jsap = createJSAP();
             JSAPResult config = jsap.parse(args);
             if (config.success()) {
-                System.out.println("SUCCESS");
                 if (config.getBoolean("encrypt")) {
                     System.out.println("Encrypting Username/Password for settings.json file:");
                     String username = config.getString("username");
