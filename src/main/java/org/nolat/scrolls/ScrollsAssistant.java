@@ -41,6 +41,11 @@ public class ScrollsAssistant {
     }
 
     @Subscribe
+    public void receiveChat(Messages.RoomChatMessage message) {
+        System.out.println(message.from + "@" + message.roomName + ": " + message.text);
+    }
+
+    @Subscribe
     public void receiveWhisper(Messages.Whisper message) {
         System.out.println("Whisper from " + message.from + ": " + message.text);
     }

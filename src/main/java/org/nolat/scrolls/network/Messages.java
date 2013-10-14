@@ -28,6 +28,7 @@ public class Messages {
         messageTypes.put("RoomChatMessage", RoomChatMessage.class);
         messageTypes.put("Whisper", Whisper.class);
         messageTypes.put("GetFriends", GetFriends.class);
+        messageTypes.put("RoomInfo", RoomInfo.class);
     }
 
     /**
@@ -200,6 +201,13 @@ public class Messages {
         public SetAcceptTrades(boolean acceptTrades) {
             this.acceptTrades = acceptTrades;
         }
+    }
+
+    public static class RoomInfo extends Message {
+        public String msg = "RoomInfo";
+        public String roomName;
+        public boolean reset;
+        public Profile[] updated;
     }
 
     //---Data Classes---
