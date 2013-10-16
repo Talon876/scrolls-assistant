@@ -50,6 +50,7 @@ public class ScrollsConnection implements Runnable, RawMessageListener {
         messageRouter = new MessageRouter(this);
         try {
             socket = new Socket(hostname, SCROLLS_PORT);
+            socket.setSoTimeout(0); //no timeout
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (IOException e) {
