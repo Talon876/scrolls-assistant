@@ -1,5 +1,8 @@
 Scrolls Assistant
 =================
+
+Inactive as of the 0.110 server update.
+
 [![Build Status](https://travis-ci.org/Talon876/scrolls-assistant.png?branch=master)](https://travis-ci.org/Talon876/scrolls-assistant)
 
 An assistant chat-bot and api for Mojang's Scrolls game.
